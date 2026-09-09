@@ -9,7 +9,6 @@
 TaikoNote/
 ├── .project
 ├── .classpath
-├── README.md
 └── src/
     └── TaikoNote/             ← パッケージ名 = フォルダ名
         ├── Main.java          全体制御（メニュー表示・処理分岐）
