@@ -3,9 +3,9 @@ package TaikoNote;
 // メニュー表示・各種定数を集約するクラス。
 public class MenuConst {
 
-	// CSVファイルの保存先（src/TaikoScoreManager フォルダ内。実行時のカレントディレクトリが
+	// CSVファイルの保存先（src/TaikoNote フォルダ内。実行時のカレントディレクトリが
 	// プロジェクトルートであることを前提としたパス）
-	public static final String CSV_FILE_PATH = "src/TaikoScoreManager/scores.csv";
+	public static final String CSV_FILE_PATH = "src/TaikoNote/scores.csv";
 
 	// CSVヘッダー
 	public static final String CSV_HEADER = "id,title,difficulty,starLevel,score,good,ok,bad,maxCombo,crown";
@@ -24,7 +24,7 @@ public class MenuConst {
 	public static final int MENU_SEARCH_ACHIEVEMENT_RATE = 7;
 	public static final int MENU_EXIT = 0;
 
-	public static final String MENU_TEXT = "\n===== Taiko Score Manager =====\n" +
+	public static final String MENU_TEXT = "\n===== Taiko Note =====\n" +
 			MENU_CREATE + ". スコア登録\n" +
 			MENU_LIST_ALL + ". スコア一覧表示\n" +
 			MENU_LIST_UNFULLCOMBO + ". 未フルコンボ曲一覧表示\n" +

@@ -1,17 +1,17 @@
-# Taiko Score Manager
+# Taiko Note
 
 太鼓の達人のプレイ結果（ハイスコア・判定数・王冠）を記録・分析するCLIアプリです。
-入出力はすべてターミナルで行い、データは `src/TaikoScoreManager/scores.csv` に保存されます。
+入出力はすべてターミナルで行い、データは `src/TaikoNote/scores.csv` に保存されます。
 
 ## フォルダ構成
 
 ```
-TaikoScoreManager/
+TaikoNote/
 ├── .project
 ├── .classpath
 ├── README.md
 └── src/
-    └── TaikoScoreManager/     ← パッケージ名 = フォルダ名
+    └── TaikoNote/             ← パッケージ名 = フォルダ名
         ├── Main.java          全体制御（メニュー表示・処理分岐）
         ├── Score.java         スコアデータのModelクラス
         ├── Difficulty.java    難易度分類のenum
@@ -23,24 +23,24 @@ TaikoScoreManager/
         └── scores.csv         データファイル（CSV）
 ```
 
-全クラスが単一パッケージ `TaikoScoreManager` に属するため、クラス間の `import` は不要です。
+全クラスが単一パッケージ `TaikoNote` に属するため、クラス間の `import` は不要です。
 
 ## Eclipseへの取り込み方
 
 1. Eclipseで `File > Import > General > Existing Projects into Workspace` を選択
-2. `TaikoScoreManager` フォルダを選択してインポート
-3. `src/TaikoScoreManager/Main.java` を右クリック → `Run As > Java Application`
+2. `TaikoNote` フォルダを選択してインポート
+3. `src/TaikoNote/Main.java` を右クリック → `Run As > Java Application`
 
 コマンドラインで実行する場合（JDKが必要です）:
 
 ```bash
-cd TaikoScoreManager
-javac -d bin -encoding UTF-8 src/TaikoScoreManager/*.java
-java -cp bin TaikoScoreManager.Main
+cd TaikoNote
+javac -d bin -encoding UTF-8 src/TaikoNote/*.java
+java -cp bin TaikoNote.Main
 ```
 
 ※ 実行はプロジェクトルート（`src` フォルダと同じ階層）で行ってください。
-　 `src/TaikoScoreManager/scores.csv` が無い場合は初回起動時に自動生成されます。
+　 `src/TaikoNote/scores.csv` が無い場合は初回起動時に自動生成されます。
 　 Eclipseで `Run As > Java Application` を使う場合、デフォルトの作業ディレクトリは
 　 プロジェクトルートになるため、そのまま実行して問題ありません。
 
@@ -126,12 +126,10 @@ flowchart TD
     J --> H
 ```
 
-
-
 ## 補足・制約事項
 
 * JDK未インストール環境で作成したため、本ファイル一式は **javacによる実機コンパイル確認は行えていません**。
   括弧・波括弧の対応や、パッケージ統合に伴うimport整理・メソッドシグネチャの整合性は
   目視で入念に確認済みですが、Eclipseへのインポート後、最初のビルドでエラーが出ないか
   一度ご確認ください。
-* 曲名にカンマやダブルクォートが含まれてもCSVが壊れないよう、簡易的なクォート処理を実装しています。 
+* 曲名にカンマやダブルクォートが含まれてもCSVが壊れないよう、簡易的なクォート処理を実装しています。
