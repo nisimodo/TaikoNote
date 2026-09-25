@@ -124,7 +124,7 @@ public class InputUtil {
 		}
 	}
 
-	//文字列が数字として正しく変換できるかチェック 失敗時はnull
+	//文字列が数字として正しく変換できるかチェック 失敗時はnull 
 	public Integer parseIntSafe(String text) {
 		try {
 			return Integer.parseInt(text);
