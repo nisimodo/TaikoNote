@@ -2,124 +2,78 @@ package TaikoNote;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 
-// スコアデータのCRUD処理・検索処理・CSVファイルへの永続化を担うServiceクラス。
+//リザルトの登録・一覧・更新・削除・絞り込みを行うServiceクラス
 public class ScoreService {
 
-	private final List<Score> scoreList = new ArrayList<>();
-	private final String filePath;
-
-	public ScoreService() {
-		this(MenuConst.CSV_FILE_PATH);
-	}
+	private String filePath;
 
 	public ScoreService(String filePath) {
 		this.filePath = filePath;
-		load();
 	}
 
-	// ---------- CSV入出力 ----------
-
-	// CSVファイルからデータを読み込む。ファイルが存在しない場合は新規作成
-	public void load() {
-		scoreList.clear();
-		File file = new File(filePath);
-
-		try {
-			File parentDir = file.getParentFile();
-			if (parentDir != null && !parentDir.exists()) {
-				parentDir.mkdirs();
+	//CSVファイルを1行ずつ全て読み込んでリストにして返す（ヘッダー行も含む 生の文字列のまま）
+	private ArrayList<String> readAllLines() throws IOException {
+		ArrayList<String> lines = new ArrayList<>();
+		try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+			String line;
+			while ((line = br.readLine()) != null) {
+				lines.add(line);
 			}
-
-			if (!file.exists()) {
-				// 初回起動時はヘッダーのみのファイルを作成
-				try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
-					bw.write(MenuConst.CSV_HEADER);
-					bw.newLine();
-				}
-				return;
-			}
-
-			try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-				String line;
-				boolean isFirstLine = true;
-				while ((line = br.readLine()) != null) {
-					if (isFirstLine) {
-						// ヘッダー行はスキップ
-						isFirstLine = false;
-						continue;
-					}
-					if (line.trim().isEmpty()) {
-						continue;
-					}
-					try {
-						scoreList.add(Score.fromCsvLine(line));
-					} catch (Exception e) {
-						System.out.println("※ CSVの読み込みに失敗した行をスキップしました: " + line);
-					}
-				}
-			}
-		} catch (IOException e) {
-			System.out.println("※ CSVファイルの読み込み中にエラーが発生しました: " + e.getMessage());
+		} catch (FileNotFoundException e) {
+			//ファイルが無い場合はヘッダー行のみのリストを作成
+			lines.add("ID,曲名,ジャンル,難易度,レベル,スコア,良,可,不可,クリア状況");
 		}
+		return lines;
 	}
 
-	// 現在のメモリ上のデータをCSVファイルに書き込む。
-	public void save() {
-		File file = new File(filePath);
-		File parentDir = file.getParentFile();
-		if (parentDir != null && !parentDir.exists()) {
-			parentDir.mkdirs();
-		}
-
-		try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
-			bw.write(MenuConst.CSV_HEADER);
-			bw.newLine();
-			for (Score s : scoreList) {
-				bw.write(s.toCsvLine());
+	//リストの内容を1行ずつCSVファイルに書き込む（上書き）
+	private void writeAllLines(ArrayList<String> lines) throws IOException {
+		try (BufferedWriter bw = new BufferedWriter(new FileWriter(filePath))) {
+			for (String line : lines) {
+				bw.write(line);
 				bw.newLine();
 			}
-		} catch (IOException e) {
-			System.out.println("※ CSVファイルの書き込み中にエラーが発生しました: " + e.getMessage());
 		}
 	}
 
-	// ---------- Create ----------
-
-	// 新しいスコアを登録。IDは自動採番。
-	public Score create(String title, Difficulty difficulty, int starLevel, int score,
-			int good, int ok, int bad, int maxCombo, Crown crown) {
-		int newId = getNextId();
-		Score s = new Score(newId, title, difficulty, starLevel, score, good, ok, bad, maxCombo, crown);
-		scoreList.add(s);
-		save();
-		return s;
-	}
-
-	private int getNextId() {
-		int maxId = 0;
-		for (Score s : scoreList) {
-			if (s.getId() > maxId) {
-				maxId = s.getId();
+	//ヘッダー行を除いた全リザルトをScoreのリストにして返す
+	public ArrayList<Score> findAll() throws IOException {
+		ArrayList<Score> scores = new ArrayList<>();
+		ArrayList<String> lines = readAllLines();
+		for (int i = 1; i < lines.size(); i++) { //0はヘッダー行のため1から
+			String line = lines.get(i);
+			if (line.isEmpty()) {
+				continue;
+			}
+			try {
+				scores.add(Score.fromCsvLine(line));
+			} catch (NumberFormatException e) {
+				//数字であるべき項目が壊れている行は読み飛ばす
+				continue;
 			}
 		}
-		return maxId + 1;
+		return scores;
 	}
 
-	// ---------- Read ----------
-
-	public List<Score> getAll() {
-		return new ArrayList<>(scoreList);
+	//同じ曲名・同じ難易度のリザルトが既に登録されているか調べる（無ければnull）
+	public Score findBySongAndDifficulty(String songName, int difficulty) throws IOException {
+		for (Score s : findAll()) {
+			if (s.getSongName().equals(songName) && s.getDifficulty() == difficulty) {
+				return s;
+			}
+		}
+		return null;
 	}
 
-	public Score findById(int id) {
-		for (Score s : scoreList) {
+	//IDを指定して1件取得（無ければnull）
+	public Score findById(int id) throws IOException {
+		for (Score s : findAll()) {
 			if (s.getId() == id) {
 				return s;
 			}
@@ -127,79 +81,121 @@ public class ScoreService {
 		return null;
 	}
 
-	// 曲名・難易度分類が完全一致するデータを検索（登録時の重複チェック用）
-	// 該当がなければnullを返す
-	public Score findByTitleAndDifficulty(String title, Difficulty difficulty) {
-		for (Score s : scoreList) {
-			if (s.getTitle().equals(title) && s.getDifficulty() == difficulty) {
-				return s;
-			}
-		}
-		return null;
-	}
-
-	// 未フルコンボ（フルコンボ・ドンダフルコンボ以外）の曲一覧を取得
-	public List<Score> getUnfullComboList() {
-		List<Score> result = new ArrayList<>();
-		for (Score s : scoreList) {
-			if (!s.getCrown().isFullComboAchieved()) {
+	//クリア状況（未クリア／クリア／フルコンボ／ドンだフルコンボ）で絞り込む
+	public ArrayList<Score> findByClearStatus(String status) throws IOException {
+		ArrayList<Score> result = new ArrayList<>();
+		for (Score s : findAll()) {
+			if (s.getClearStatusText().equals(status)) {
 				result.add(s);
 			}
 		}
 		return result;
 	}
 
-	// 難易度分類・星レベルで検索する。starLevelがnullの場合は難易度分類のみで絞り込む
-	public List<Score> searchByDifficulty(Difficulty difficulty, Integer starLevel) {
-		List<Score> result = new ArrayList<>();
-		for (Score s : scoreList) {
-			if (s.getDifficulty() != difficulty) {
-				continue;
-			}
-			if (starLevel != null && s.getStarLevel() != starLevel) {
-				continue;
-			}
-			result.add(s);
-		}
-		return result;
-	}
-
-	// 達成率(%)の範囲で検索する。結果は達成率の高い順（降順）で返す。
-	// 達成率 = ((良の数 × 1 + 可の数 × 0.5) / (良の数+可の数+不可の数)) * 100
-	public List<Score> searchByAchievementRate(double minRate, double maxRate) {
-		List<Score> result = new ArrayList<>();
-		for (Score s : scoreList) {
-			double rate = s.calcAchievementRate();
-			if (rate >= minRate && rate <= maxRate) {
+	//難易度で絞り込む
+	public ArrayList<Score> findByDifficulty(int difficulty) throws IOException {
+		ArrayList<Score> result = new ArrayList<>();
+		for (Score s : findAll()) {
+			if (s.getDifficulty() == difficulty) {
 				result.add(s);
 			}
 		}
-		result.sort((a, b) -> Double.compare(b.calcAchievementRate(), a.calcAchievementRate()));
 		return result;
 	}
 
-	// ---------- Update ----------
+	//ジャンルで絞り込む
+	public ArrayList<Score> findByGenre(int genre) throws IOException {
+		ArrayList<Score> result = new ArrayList<>();
+		for (Score s : findAll()) {
+			if (s.getGenre() == genre) {
+				result.add(s);
+			}
+		}
+		return result;
+	}
 
-	// 既存のスコアを更新する。該当IDが存在しない場合はfalseを返す。
-	public boolean update(Score updated) {
-		for (int i = 0; i < scoreList.size(); i++) {
-			if (scoreList.get(i).getId() == updated.getId()) {
-				scoreList.set(i, updated);
-				save();
+	//達成率が指定範囲内のリザルトを達成率の高い順に並べて返す
+	public ArrayList<Score> findByAchievementRateRange(int lowerRate, int upperRate) throws IOException {
+		ArrayList<Score> filtered = new ArrayList<>();
+		ArrayList<Double> rates = new ArrayList<>();
+
+		for (Score s : findAll()) {
+			if (s.getYoi() + s.getKa() + s.getFuka() == 0) {
+				continue;
+			}
+			double rate = s.getAchievementRate();
+			if (rate < lowerRate || rate > upperRate) {
+				continue;
+			}
+			filtered.add(s);
+			rates.add(rate);
+		}
+
+		//達成率が高い順に並び替える（選択ソート）
+		for (int i = 0; i < rates.size() - 1; i++) {
+			int maxIndex = i;
+			for (int j = i + 1; j < rates.size(); j++) {
+				if (rates.get(j) > rates.get(maxIndex)) {
+					maxIndex = j;
+				}
+			}
+			if (maxIndex != i) {
+				double tempRate = rates.get(i);
+				rates.set(i, rates.get(maxIndex));
+				rates.set(maxIndex, tempRate);
+
+				Score tempScore = filtered.get(i);
+				filtered.set(i, filtered.get(maxIndex));
+				filtered.set(maxIndex, tempScore);
+			}
+		}
+
+		return filtered;
+	}
+
+	//新しいリザルトを登録（IDは自動採番）
+	public void register(Score score) throws IOException {
+		ArrayList<String> lines = readAllLines();
+		score.setId(lines.size()); //ヘッダー行を除いた件数+1をIDにする
+		lines.add(score.toCsvLine());
+		writeAllLines(lines);
+	}
+
+	//既存のリザルトを更新（成功したらtrue）
+	public boolean update(Score score) throws IOException {
+		ArrayList<String> lines = readAllLines();
+		for (int i = 1; i < lines.size(); i++) {
+			Score current;
+			try {
+				current = Score.fromCsvLine(lines.get(i));
+			} catch (NumberFormatException e) {
+				continue;
+			}
+			if (current.getId() == score.getId()) {
+				lines.set(i, score.toCsvLine());
+				writeAllLines(lines);
 				return true;
 			}
 		}
 		return false;
 	}
 
-	// ---------- Delete ----------
-
-	// 指定IDのスコアを削除する。削除できた場合trueを返す。
-	public boolean delete(int id) {
-		boolean removed = scoreList.removeIf(s -> s.getId() == id);
-		if (removed) {
-			save();
+	//IDを指定してリザルトを削除（成功したらtrue）
+	public boolean delete(int id) throws IOException {
+		ArrayList<String> lines = readAllLines();
+		for (int i = 1; i < lines.size(); i++) {
+			Score current;
+			try {
+				current = Score.fromCsvLine(lines.get(i));
+			} catch (NumberFormatException e) {
+				continue;
+			}
+			if (current.getId() == id) {
+				lines.remove(i);
+				writeAllLines(lines);
+				return true;
+			}
 		}
-		return removed;
+		return false;
 	}
 }

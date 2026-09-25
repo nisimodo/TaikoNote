@@ -2,167 +2,138 @@ package TaikoNote;
 
 import java.util.Scanner;
 
-// ターミナルからの入力受付・チェックを行うユーティリティクラス。
+//入力受付と入力チェックを担当するUtilクラス
 public class InputUtil {
+	private Scanner scanner;
 
-	// 空文字を許可しない文字列入力を受け付ける。
-	public static String readNonEmptyString(Scanner sc, String prompt) {
-		while (true) {
-			System.out.print(prompt);
-			String input = sc.nextLine().trim();
-			if (!input.isEmpty()) {
-				return input;
-			}
-			System.out.println("※ 空欄では登録できません。もう一度入力してください。");
-		}
+	public InputUtil() {
+		scanner = new Scanner(System.in);
 	}
 
-	// 0以上の整数を受け付ける。
-	public static int readNonNegativeInt(Scanner sc, String prompt) {
-		while (true) {
-			System.out.print(prompt);
-			String input = sc.nextLine().trim();
-			try {
-				int value = Integer.parseInt(input);
-				if (value < 0) {
-					System.out.println("※ 0以上の整数を入力してください。");
-					continue;
-				}
-				return value;
-			} catch (NumberFormatException e) {
-				System.out.println("※ 数値を入力してください。");
-			}
-		}
-	}
-
-	// 指定した範囲(min〜max)の整数を受け付ける。
-	public static int readIntInRange(Scanner sc, String prompt, int min, int max) {
-		while (true) {
-			System.out.print(prompt);
-			String input = sc.nextLine().trim();
-			try {
-				int value = Integer.parseInt(input);
-				if (value < min || value > max) {
-					System.out.println("※ " + min + "〜" + max + " の範囲で入力してください。");
-					continue;
-				}
-				return value;
-			} catch (NumberFormatException e) {
-				System.out.println("※ 数値を入力してください。");
-			}
-		}
-	}
-
-	// 0.0〜100.0の範囲のパーセント値（達成率）を受け付け
-	public static double readPercent(Scanner sc, String prompt) {
-		while (true) {
-			System.out.print(prompt);
-			String input = sc.nextLine().trim();
-			try {
-				double value = Double.parseDouble(input);
-				if (value < 0.0 || value > 100.0) {
-					System.out.println("※ 0〜100 の範囲で入力してください。");
-					continue;
-				}
-				return value;
-			} catch (NumberFormatException e) {
-				System.out.println("※ 数値を入力してください。");
-			}
-		}
-	}
-
-	//更新処理用：空欄のままEnterされた場合は現在値を維持する整数入力。
-	public static int readOptionalInt(Scanner sc, String prompt, int currentValue) {
-		while (true) {
-			System.out.print(prompt);
-			String input = sc.nextLine().trim();
-			if (input.isEmpty()) {
-				return currentValue;
-			}
-			try {
-				int value = Integer.parseInt(input);
-				if (value < 0) {
-					System.out.println("※ 0以上の整数を入力してください。");
-					continue;
-				}
-				return value;
-			} catch (NumberFormatException e) {
-				System.out.println("※ 数値を入力してください。");
-			}
-		}
-	}
-
-	//難易度分類を選択
-	public static Difficulty readDifficulty(Scanner sc) {
-		Difficulty[] values = Difficulty.values();
-		while (true) {
-			System.out.println("難易度を選択してください:");
-			for (int i = 0; i < values.length; i++) {
-				System.out.println((i + 1) + ". " + values[i].getLabel());
-			}
-			System.out.print("番号を入力: ");
-			String input = sc.nextLine().trim();
-			try {
-				int num = Integer.parseInt(input);
-				if (num >= 1 && num <= values.length) {
-					return values[num - 1];
-				}
-			} catch (NumberFormatException e) {
-				// 下のメッセージ
-			}
-			System.out.println("※ 1〜" + values.length + " の番号で選択してください。");
-		}
-	}
-
-	//星レベル(1〜10)を受け付け
-	public static int readStarLevel(Scanner sc) {
-		return readIntInRange(sc,
-				"星レベル(" + MenuConst.MIN_STAR_LEVEL + "〜" + MenuConst.MAX_STAR_LEVEL + ")を入力: ",
-				MenuConst.MIN_STAR_LEVEL, MenuConst.MAX_STAR_LEVEL);
-	}
-
-	//王冠（クリア状況）を選択
-
-	public static Crown readCrown(Scanner sc) {
-		Crown[] values = Crown.values();
-		while (true) {
-			System.out.println("クリア状況（王冠）を選択してください:");
-			for (int i = 0; i < values.length; i++) {
-				System.out.println((i + 1) + ". " + values[i].getLabel());
-			}
-			System.out.print("番号を入力: ");
-			String input = sc.nextLine().trim();
-			try {
-				int num = Integer.parseInt(input);
-				if (num >= 1 && num <= values.length) {
-					return values[num - 1];
-				}
-			} catch (NumberFormatException e) {
-				// 下の警告メッセージへ
-			}
-			System.out.println("※ 1〜" + values.length + " の番号で選択してください。");
-		}
-	}
-
-	// y/n の確認入力を受け付け。yの場合trueを返す。
-	public static boolean confirm(Scanner sc, String prompt) {
-		while (true) {
-			System.out.print(prompt + " (y/n): ");
-			String input = sc.nextLine().trim().toLowerCase();
-			if (input.equals("y")) {
-				return true;
-			} else if (input.equals("n")) {
-				return false;
-			}
-			System.out.println("※ y または n を入力してください。");
-		}
-	}
-
-	// 入力を空のまま Enter した場合は現在値を維持するための文字列入力（更新処理用）。
-	// 空欄ならnullを返す。
-	public static String readOptionalString(Scanner sc, String prompt) {
+	//プロンプト表示後 空白区切りの文字列を受け取る
+	public String next(String prompt) {
 		System.out.print(prompt);
-		String input = sc.nextLine().trim();
-		return input.isEmpty() ? null : input;
+		return scanner.next();
+	}
+
+	//プロンプト表示済みの状態で空白区切りの文字列を受け取る
+	public String next() {
+		return scanner.next();
+	}
+
+	//プロンプト表示後 整数の入力を受け取る
+	public int nextInt(String prompt) {
+		System.out.print(prompt);
+		return scanner.nextInt();
+	}
+
+	//プロンプト表示済みの状態で整数の入力を受け取る
+	public int nextInt() {
+		return scanner.nextInt();
+	}
+
+	//プロンプト表示後 1行分の文字列を受け取る（空欄ならそのまま空文字列）
+	public String nextLine(String prompt) {
+		System.out.print(prompt);
+		return scanner.nextLine();
+	}
+
+	//nextInt()やnext()の後に残る改行を読み捨てる（nextLine()に切り替える前に呼ぶ）
+	public void skipNewLine() {
+		scanner.nextLine();
+	}
+
+	//プロンプト表示後 有効な整数が入るまで再入力（数字以外でも落ちない）
+	public int nextIntSafe(String prompt) {
+		while (true) {
+			System.out.print(prompt);
+			String line = scanner.nextLine();
+			Integer value = parseIntSafe(line.trim());
+			if (value != null) {
+				return value;
+			}
+			System.out.println("数字を入力してください");
+		}
+	}
+
+	//プロンプト表示後 min~max範囲の整数が入るまで再入力（メニュー選択用）
+	public int nextIntInRange(String prompt, int min, int max) {
+		while (true) {
+			int value = nextIntSafe(prompt);
+			if (value >= min && value <= max) {
+				return value;
+			}
+			System.out.println(min + "~" + max + "で入力してください");
+		}
+	}
+
+	//プロンプト表示後 空欄（変更なし）か有効な整数が入るまで再入力 空欄ならnull
+	public Integer nextIntOrEmpty(String prompt) {
+		while (true) {
+			System.out.print(prompt);
+			String line = scanner.nextLine().trim();
+			if (line.isEmpty()) {
+				return null;
+			}
+			Integer value = parseIntSafe(line);
+			if (value != null) {
+				return value;
+			}
+			System.out.println("数字を入力してください（空欄で変更なし）");
+		}
+	}
+
+	//プロンプト表示後 空欄（変更なし）かmin~max範囲の整数が入るまで再入力 空欄ならnull
+	public Integer nextIntInRangeOrEmpty(String prompt, int min, int max) {
+		while (true) {
+			Integer value = nextIntOrEmpty(prompt);
+			if (value == null) {
+				return null;
+			}
+			if (value >= min && value <= max) {
+				return value;
+			}
+			System.out.println(min + "~" + max + "で入力してください（空欄で変更なし）");
+		}
+	}
+
+	//プロンプト表示後 "y"か"n"が入るまで再入力
+	public boolean nextYesNoSafe(String prompt) {
+		while (true) {
+			System.out.print(prompt);
+			String line = scanner.nextLine().trim();
+			if (line.equals("y") || line.equals("n")) {
+				return line.equals("y");
+			}
+			System.out.println("yかnを入力してください");
+		}
+	}
+
+	//プロンプト表示後 空欄（変更なし）か"y"/"n"が入るまで再入力 空欄ならnull
+	public Boolean nextYesNoOrEmpty(String prompt) {
+		while (true) {
+			System.out.print(prompt);
+			String line = scanner.nextLine().trim();
+			if (line.isEmpty()) {
+				return null;
+			}
+			if (line.equals("y") || line.equals("n")) {
+				return line.equals("y");
+			}
+			System.out.println("yかnを入力してください（空欄で変更なし）");
+		}
+	}
+
+	//文字列が数字として正しく変換できるかチェック 失敗時はnull
+	public Integer parseIntSafe(String text) {
+		try {
+			return Integer.parseInt(text);
+		} catch (NumberFormatException e) {
+			return null;
+		}
+	}
+
+	public void close() {
+		scanner.close();
 	}
 }
